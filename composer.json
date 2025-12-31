@@ -1,0 +1,15 @@
+{
+    "name": "adimael/api-rest",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Adimael\\ApiRest\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Adimael"
+        }
+    ],
+    "require": {}
+}
