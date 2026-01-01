@@ -11,5 +11,7 @@
             "name": "Adimael"
         }
     ],
-    "require": {}
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
 }
