@@ -4,8 +4,8 @@ namespace src\Exceptions;
 
 final class UsernameInvalidoException extends DomainException
 {
-    public function __construct()
+    public function __construct(string $mensagem = 'Username inválido')
     {
-        parent::__construct('Username deve ter no mínimo 3 caracteres');
+        parent::__construct($mensagem);
     }
 }
