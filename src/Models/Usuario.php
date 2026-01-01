@@ -16,7 +16,7 @@ class Usuario
     private NivelAcesso $nivel_acesso;
     private bool $ativo;
     private \DateTimeImmutable $criado_em;
-    private \DateTimeImmutable $atualizado_em;
+    private ?\DateTimeImmutable $atualizado_em;
 
     private function __construct(
         string $uuid,
@@ -27,7 +27,7 @@ class Usuario
         NivelAcesso $nivel_acesso,
         bool $ativo,
         \DateTimeImmutable $criado_em,
-        \DateTimeImmutable $atualizado_em = null,
+        ?\DateTimeImmutable $atualizado_em = null,
     ) {
         $this->uuid = $uuid;
         $this->nome = $nome;
@@ -37,7 +37,7 @@ class Usuario
         $this->nivel_acesso = $nivel_acesso;
         $this->ativo = $ativo;
         $this->criado_em = $criado_em;
-        $this->atualizado_em = $criado_em;
+        $this->atualizado_em = $atualizado_em;
     }
 
     public static function criar(
@@ -56,7 +56,35 @@ class Usuario
         }
 
         if(strlen($username) < 3) {
-            throw new UsernameInvalidoException();
+            throw new UsernameInvalidoException("Username deve ter no mínimo 3 caracteres.");
+        }
+
+        // Verifica se começa com letra
+        if(!preg_match('/^[a-z]/', $username)) {
+            throw new UsernameInvalidoException("Username deve começar com uma letra.");
+        }
+
+        // Verifica se há letras maiúsculas
+        if($username !== strtolower($username)) {
+            throw new UsernameInvalidoException("Username não pode conter letras maiúsculas.");
+        }
+
+        // Conta quantos caracteres especiais permitidos existem
+        $caracteresEspeciais = ['.', '_', '@'];
+        $totalCaracteresEspeciais = 0;
+        
+        foreach($caracteresEspeciais as $char) {
+            $totalCaracteresEspeciais += substr_count($username, $char);
+        }
+
+        // Verifica se há mais de um caractere especial
+        if($totalCaracteresEspeciais > 1) {
+            throw new UsernameInvalidoException("Username pode conter apenas um caractere especial (. _ ou @).");
+        }
+
+        // Verifica se contém apenas letras minúsculas, números e um dos caracteres especiais permitidos
+        if(!preg_match('/^[a-z0-9._@]+$/', $username)) {
+            throw new UsernameInvalidoException("Username pode conter apenas letras minúsculas, números e um dos caracteres: . _ @");
         }
 
         return new Usuario(
@@ -101,6 +129,11 @@ class Usuario
         return $this->email;
     }
 
+    public function getSenhaHash(): string
+    {
+        return $this->senhaHash;
+    }
+
     public function isAtivo(): bool
     {
         return $this->ativo;
@@ -116,7 +149,7 @@ class Usuario
         return $this->criado_em;
     }
 
-    public function getAtualizadoEm(): \DateTimeImmutable
+    public function getAtualizadoEm(): ?\DateTimeImmutable
     {
         return $this->atualizado_em;
     }
