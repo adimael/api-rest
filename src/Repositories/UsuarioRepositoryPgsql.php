@@ -67,9 +67,56 @@ class UsuarioRepositoryPgsql implements UsuarioRepository
         return $this->mapearParaUsuario($dados);
     }
 
+    public function listar(): array
+    {
+        $sql = "SELECT * FROM usuarios ORDER BY criado_em DESC";
+        
+        $stmt = $this->pdo->query($sql);
+        $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        $usuarios = [];
+        foreach ($dados as $linha) {
+            $usuarios[] = $this->mapearParaUsuario($linha);
+        }
+        
+        return $usuarios;
+    }
+
+    public function atualizar(Usuario $usuario): void
+    {
+        $sql = "UPDATE usuarios SET nome = :nome, username = :username, email = :email, nivel_acesso = :nivel_acesso, ativo = :ativo, atualizado_em = :atualizado_em WHERE uuid = :uuid";
+        
+        $stmt = $this->pdo->prepare($sql);
+        
+        $stmt->execute([
+            ':uuid' => $usuario->getUuid(),
+            ':nome' => $usuario->getNome(),
+            ':username' => $usuario->getUsername(),
+            ':email' => $usuario->getEmail(),
+            ':nivel_acesso' => $usuario->getNivelAcesso()->value,
+            ':ativo' => $usuario->isAtivo(),
+            ':atualizado_em' => $usuario->getAtualizadoEm() ? $usuario->getAtualizadoEm()->format('Y-m-d H:i:s') : null
+        ]);
+    }
+
+    public function deletar(string $uuid): bool
+    {
+        $sql = "DELETE FROM usuarios WHERE uuid = :uuid";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':uuid' => $uuid]);
+        
+        return $stmt->rowCount() > 0;
+    }
+
     private function mapearParaUsuario(array $dados): Usuario
     {
-        return Usuario::criar(
+        $atualizadoEm = null;
+        if (!empty($dados['atualizado_em']) && $dados['atualizado_em'] !== null) {
+            $atualizadoEm = new \DateTimeImmutable($dados['atualizado_em']);
+        }
+        
+        $usuario = Usuario::criar(
             $dados['uuid'],
             $dados['nome'],
             $dados['username'],
@@ -79,5 +126,11 @@ class UsuarioRepositoryPgsql implements UsuarioRepository
             (bool) $dados['ativo'],
             new \DateTimeImmutable($dados['criado_em'])
         );
+        
+        if ($atualizadoEm) {
+            $usuario->setAtualizadoEm($atualizadoEm);
+        }
+        
+        return $usuario;
     }
 }

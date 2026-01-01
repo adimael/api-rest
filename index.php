@@ -2,71 +2,63 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
-use src\Config\Database\PostgreSQL\Conexao;
-use src\Models\Usuario;
-use src\Enum\NivelAcesso;
-use src\Services\UsuarioService;
-use src\Repositories\UsuarioRepositoryPgsql;
+use src\Core\Container;
+use src\Routes\Routes;
+use src\Middlewares\AutenticacaoMiddleware;
 
-try {
-    // Testa a conexão com o banco
-    $pdo = Conexao::getInstance();
+// Carrega o arquivo de rotas
+$router = require __DIR__ . '/src/Routes/Routes.php';
 
-    // Cria as instâncias necessárias
-    $usuarioRepository = new UsuarioRepositoryPgsql();
-    $usuarioService = new UsuarioService($usuarioRepository);
+// Obtém o método HTTP e o caminho solicitado
+$metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$caminho = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-    // Dados do novo usuário
-    $nome = "Adimael S.";
-    $username = "adim@el.silva";
-    $email = "adimael@gmail.com";
-    $senha = "123456";
-    $senhaHash = password_hash($senha, PASSWORD_BCRYPT); // Criptografa a senha
-    $nivelAcesso = NivelAcesso::USUARIO; // Pode ser: SUPER_ADMIN, ADMIN ou USUARIO
-    $ativo = true;
+// Remove a barra inicial se existir (para rotas começarem com /)
+if ($caminho !== '/') {
+    $caminho = '/' . trim($caminho, '/');
+}
 
-    // Registra o usuário (UUID gerado automaticamente)
-    $usuario = $usuarioService->registrarUsuario(
-        $nome,
-        $username,
-        $email,
-        $senhaHash,
-        $nivelAcesso,
-        $ativo
-    );
+// Tenta encontrar uma rota que corresponda
+$rota = $router->match($metodo, $caminho);
 
-    // Exibe o resultado
-    echo json_encode([
-        'sucesso' => true,
-        'mensagem' => 'Usuário criado com sucesso!',
-        'usuario' => [
-            'uuid' => $usuario->getUuid(),
-            'nome' => $usuario->getNome(),
-            'username' => $usuario->getUsername(),
-            'email' => $usuario->getEmail(),
-            'nivel_acesso' => $usuario->getNivelAcesso()->value,
-            'ativo' => $usuario->isAtivo()
-        ]
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+if ($rota) {
+    // Executa middlewares da rota
+    $middlewares = $rota->getMiddlewares();
+    
+    if (!empty($middlewares)) {
+        foreach ($middlewares as $middleware) {
+            if ($middleware === 'autenticacao') {
+                $autenticacao = new AutenticacaoMiddleware();
+                $autenticacao->processar();
+            }
+        }
+    }
 
-} catch (\src\Exceptions\EmailInvalidoException $e) {
-    http_response_code(400);
-    echo json_encode([
-        'sucesso' => false,
-        'erro' => $e->getMessage()
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    // Resolve o controller e executa a ação
+    try {
+        $nomeController = 'src\\Controllers\\' . $rota->getController();
+        $controller = Container::get($nomeController);
+        $acao = $rota->getAction();
+        $parametros = $rota->getParameters();
 
-} catch (\src\Exceptions\UsernameInvalidoException $e) {
-    http_response_code(400);
-    echo json_encode([
-        'sucesso' => false,
-        'erro' => $e->getMessage()
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-
-} catch (\Exception $e) {
-    http_response_code(500);
+        // Chama o método do controller com os parâmetros
+        if (empty($parametros)) {
+            $controller->$acao();
+        } else {
+            $controller->$acao(...$parametros);
+        }
+    } catch (\Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'sucesso' => false,
+            'erro' => 'Erro ao processar requisição: ' . $e->getMessage()
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+} else {
+    // Rota não encontrada
+    http_response_code(404);
     echo json_encode([
         'sucesso' => false,
-        'erro' => 'Erro ao criar usuário: ' . $e->getMessage()
+        'erro' => 'Rota não encontrada: ' . $metodo . ' ' . $caminho
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 }

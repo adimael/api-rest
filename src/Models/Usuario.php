@@ -154,6 +154,68 @@ class Usuario
         return $this->atualizado_em;
     }
 
+    public function setNome(string $nome): void
+    {
+        $this->nome = $nome;
+    }
+
+    public function setUsername(string $username): void
+    {
+        // Valida o username
+        if(strlen($username) < 3) {
+            throw new UsernameInvalidoException("Username deve ter no mínimo 3 caracteres.");
+        }
+
+        if(!preg_match('/^[a-z]/', $username)) {
+            throw new UsernameInvalidoException("Username deve começar com uma letra.");
+        }
+
+        if($username !== strtolower($username)) {
+            throw new UsernameInvalidoException("Username não pode conter letras maiúsculas.");
+        }
+
+        $caracteresEspeciais = ['.', '_', '@'];
+        $totalCaracteresEspeciais = 0;
+        
+        foreach($caracteresEspeciais as $char) {
+            $totalCaracteresEspeciais += substr_count($username, $char);
+        }
+
+        if($totalCaracteresEspeciais > 1) {
+            throw new UsernameInvalidoException("Username pode conter apenas um caractere especial (. _ ou @).");
+        }
+
+        if(!preg_match('/^[a-z0-9._@]+$/', $username)) {
+            throw new UsernameInvalidoException("Username pode conter apenas letras minúsculas, números e um dos caracteres: . _ @");
+        }
+
+        $this->username = $username;
+    }
+
+    public function setEmail(string $email): void
+    {
+        if(!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new EmailInvalidoException($email);
+        }
+
+        $this->email = $email;
+    }
+
+    public function setNivelAcesso(NivelAcesso $nivelAcesso): void
+    {
+        $this->nivel_acesso = $nivelAcesso;
+    }
+
+    public function setAtivo(bool $ativo): void
+    {
+        $this->ativo = $ativo;
+    }
+
+    public function setAtualizadoEm(?\DateTimeImmutable $atualizadoEm): void
+    {
+        $this->atualizado_em = $atualizadoEm;
+    }
+
     public function toArray(): array
     {
         return [

@@ -19,7 +19,7 @@ class UsuarioService
         string $nome,
         string $username,
         string $email,
-        string $senhaHash,
+        string $senha,
         NivelAcesso $nivel_acesso,
         bool $ativo
     ): Usuario {
@@ -32,6 +32,9 @@ class UsuarioService
             mt_rand(0, 0x3fff) | 0x8000,
             mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
         );
+
+        // Criptografa a senha
+        $senhaHash = password_hash($senha, PASSWORD_BCRYPT);
 
         $criado_em = new \DateTimeImmutable();
 

@@ -11,9 +11,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Configura o header JSON para toda a API
 header('Content-Type: application/json; charset=utf-8');
 
-// Carrega as variáveis de ambiente e configura o timezone automaticamente
-use src\Config\EnvConfig;
-EnvConfig::getInstance();
+// Inicializa EnvConfig (carrega variáveis de ambiente e timezone)
+\src\Config\EnvConfig::getInstance();
+
+// Registra as dependências no Container
+require_once __DIR__ . '/dependencies.php';
 
 // Tratamento global de erros para APIs JSON
 set_exception_handler(function ($e) {
