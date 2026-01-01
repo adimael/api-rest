@@ -16,7 +16,6 @@ class UsuarioService
     }
 
     public function registrarUsuario(
-        string $uuid,
         string $nome,
         string $username,
         string $email,
@@ -24,6 +23,16 @@ class UsuarioService
         NivelAcesso $nivel_acesso,
         bool $ativo
     ): Usuario {
+        // Gera UUID automaticamente (formato RFC 4122 v4)
+        $uuid = sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+
         $criado_em = new \DateTimeImmutable();
 
         $usuario = Usuario::criar(
