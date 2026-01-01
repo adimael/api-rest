@@ -3,7 +3,7 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Adimael\\ApiRest\\": "src/"
+            "src\\": "src/"
         }
     },
     "authors": [

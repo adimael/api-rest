@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:15-alpine # Uses Alpine for a smaller footprint
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: adimael
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: api_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - postgres-net
+
+volumes:
+  pgdata: # Ensures data persists even if the container is removed
+
+networks:
+  postgres-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: pg_bridge
